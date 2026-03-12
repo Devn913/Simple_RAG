@@ -1,0 +1,8 @@
+django
+langchain
+langchain-community
+langchain-google-genai
+pypdf
+faiss-cpu
+python-dotenv
+django-environ
