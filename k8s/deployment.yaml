@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
         - name: simple-rag
-          # UPDATE: Replace <GITHUB_OWNER> with your GitHub username or organization name
-          image: ghcr.io/<GITHUB_OWNER>/simple-rag:latest 
+          # Image name must be lowercase in GHCR
+          image: ghcr.io/devn913/simple-rag:latest 
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
