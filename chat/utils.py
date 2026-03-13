@@ -15,34 +15,43 @@ from django.conf import settings
 ...
 def list_gemini_models():
     """
-    Lists available Gemini models that support content generation using the new google-genai SDK.
+    Lists available Gemini models that support content generation.
     """
     api_key = getattr(settings, 'GOOGLE_API_KEY', None)
     if not api_key:
-        print("DEBUG: No GOOGLE_API_KEY found in settings.")
-        return []
-
+        return [
+            {'name': 'models/gemini-1.5-flash', 'display_name': 'Gemini 1.5 Flash (Default)'},
+            {'name': 'models/gemini-1.5-pro', 'display_name': 'Gemini 1.5 Pro'},
+        ]
+    
     try:
-        client = genai.Client(api_key=api_key)
+        # We use the older SDK for listing as it's already configured in other parts of the app
+        # and has better compatibility with the current environment
+        import google.generativeai as genai
+        genai.configure(api_key=api_key)
+        
         models = []
-        print("DEBUG: Fetching available Gemini models with NEW SDK...")
-        # The new SDK has a different way to list models
-        for m in client.models.list():
-            print(f"DEBUG: Found model: {m.name} (Methods: {m.supported_generation_methods})")
-            # We filter for models that support generating content
-            # In the new SDK, supported_generation_methods might be represented differently
-            # but usually it's still ['generateContent']
-            if 'generateContent' in m.supported_generation_methods or 'generate_content' in m.supported_generation_methods:
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods and m.name.startswith('models/gemini'):
+                # Clean up display name if needed
+                display_name = m.display_name
+                if not display_name or display_name == m.name:
+                    display_name = m.name.replace('models/', '').replace('-', ' ').title()
+                
                 models.append({
                     'name': m.name,
-                    'display_name': m.display_name or m.name
+                    'display_name': display_name
                 })
-
-        print(f"DEBUG: Returning {len(models)} eligible models.")
-        return models
+        
+        # Sort models to show latest/popular ones first (simple heuristic)
+        models.sort(key=lambda x: x['name'], reverse=True)
+        
+        return models if models else [
+            {'name': 'models/gemini-1.5-flash', 'display_name': 'Gemini 1.5 Flash'},
+            {'name': 'models/gemini-1.5-pro', 'display_name': 'Gemini 1.5 Pro'},
+        ]
     except Exception as e:
-        print(f"DEBUG: Error listing Gemini models with NEW SDK: {str(e)}")
-        # Fallback to a hardcoded list if the listing fails
+        logger.error(f"Error listing Gemini models: {str(e)}")
         return [
             {'name': 'models/gemini-1.5-flash', 'display_name': 'Gemini 1.5 Flash'},
             {'name': 'models/gemini-1.5-pro', 'display_name': 'Gemini 1.5 Pro'},
