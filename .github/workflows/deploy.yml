@@ -76,5 +76,5 @@ jobs:
       - name: Update deployment image
         run: |
           IMAGE_NAME_LC=$(echo "ghcr.io/${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          kubectl set image deployment/simple-rag-deployment simple-rag=$IMAGE_NAME_LC:${{ github.sha }}
+          kubectl set image deployment/simple-rag-deployment simple-rag=$IMAGE_NAME_LC:latest
           kubectl rollout status deployment/simple-rag-deployment
