@@ -4,13 +4,19 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from .forms import PDFUploadForm
 from .models import PDFDocument
-from .utils import process_pdf, get_answer
+from .utils import process_pdf, get_answer, list_gemini_models
 from django.conf import settings
 
 def index(request):
     documents = PDFDocument.objects.all().order_by('-uploaded_at')
     form = PDFUploadForm()
-    return render(request, 'chat/index.html', {'documents': documents, 'form': form})
+    # Fetch available models from Gemini
+    available_models = list_gemini_models()
+    return render(request, 'chat/index.html', {
+        'documents': documents, 
+        'form': form,
+        'available_models': available_models
+    })
 
 import logging
 
@@ -53,6 +59,7 @@ def ask_question(request):
     if request.method == 'POST':
         query = request.POST.get('query')
         doc_id = request.POST.get('doc_id')
+        model_name = request.POST.get('model_name')
         
         if not query or not doc_id:
             return JsonResponse({'error': 'Missing query or document selection'}, status=400)
@@ -62,11 +69,13 @@ def ask_question(request):
             if not pdf_doc.vector_store_path or not os.path.exists(pdf_doc.vector_store_path):
                 return JsonResponse({'error': 'Vector store not found for this document'}, status=404)
             
-            answer = get_answer(query, pdf_doc.vector_store_path)
+            # Pass the selected model_name to get_answer
+            answer = get_answer(query, pdf_doc.vector_store_path, model_name=model_name)
             return JsonResponse({'answer': answer})
         except PDFDocument.DoesNotExist:
             return JsonResponse({'error': 'Document not found'}, status=404)
         except Exception as e:
+            logger.error(f"Error in ask_question: {str(e)}")
             return JsonResponse({'error': str(e)}, status=500)
             
     return JsonResponse({'error': 'Invalid request method'}, status=405)
