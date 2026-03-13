@@ -29,4 +29,4 @@ ENV DJANGO_SETTINGS_MODULE="pdf_chat_project.settings"
 ENV DATA_DIR="/app/data"
 
 # Command to run the application using Gunicorn
-CMD ["sh", "-c", "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn pdf_chat_project.wsgi:application --bind 0.0.0.0:8000 --workers 3"]
+CMD ["sh", "-c", "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn pdf_chat_project.wsgi:application --bind 0.0.0.0:8000 --workers 3 --forwarded-allow-ips='*' --access-logfile - --error-logfile -"]
