@@ -28,6 +28,9 @@ environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = env('SECRET_KEY', default='django-insecure-default-key')
 
+# Gemini API Key
+GOOGLE_API_KEY = env('GOOGLE_API_KEY', default=None)
+
 # Data directory for PVC mounting
 DATA_DIR = env('DATA_DIR', default=str(BASE_DIR))
 
