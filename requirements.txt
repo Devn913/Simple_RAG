@@ -6,3 +6,5 @@ pypdf
 faiss-cpu
 python-dotenv
 django-environ
+gunicorn
+psycopg2-binary

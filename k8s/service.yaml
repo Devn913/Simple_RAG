@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: simple-rag-service
+  labels:
+    app: simple-rag
+spec:
+  # Use LoadBalancer if you are on a cloud provider like AWS/GCP, or NodePort/ClusterIP for local k8s (minikube)
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 8000
+      protocol: TCP
+  selector:
+    app: simple-rag

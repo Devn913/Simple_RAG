@@ -22,7 +22,7 @@ def upload_pdf(request):
             pdf_doc = form.save()
             
             # Ensure vector_stores directory exists
-            vector_store_root = os.path.join(settings.BASE_DIR, 'vector_stores')
+            vector_store_root = os.path.join(getattr(settings, 'DATA_DIR', settings.BASE_DIR), 'vector_stores')
             if not os.path.exists(vector_store_root):
                 os.makedirs(vector_store_root)
             

@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simple-rag-deployment
+  labels:
+    app: simple-rag
+spec:
+  replicas: 1 # Important: Because we use SQLite, we shouldn't scale beyond 1 replica safely without a shared volume that supports multiple concurrent writers properly, and even then SQLite handles it poorly. If you need more replicas, migrate to PostgreSQL.
+  selector:
+    matchLabels:
+      app: simple-rag
+  template:
+    metadata:
+      labels:
+        app: simple-rag
+    spec:
+      containers:
+        - name: simple-rag
+          # UPDATE: Replace <GITHUB_OWNER> with your GitHub username or organization name
+          image: ghcr.io/<GITHUB_OWNER>/simple-rag:latest 
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DATA_DIR
+              value: "/app/data"
+            - name: DEBUG
+              value: "False"
+            - name: ALLOWED_HOSTS
+              value: "*" 
+            - name: GOOGLE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: simple-rag-secrets
+                  key: google-api-key
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: simple-rag-secrets
+                  key: database-url
+          volumeMounts:
+            - name: data-volume
+              mountPath: /app/data
+      volumes:
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: simple-rag-pvc
