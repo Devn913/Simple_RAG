@@ -16,8 +16,8 @@ spec:
     spec:
       containers:
         - name: simple-rag
-          # Image name must be lowercase in GHCR
-          image: ghcr.io/devn913/simple-rag:latest 
+          # Correct image name with underscore to match repo: simple_rag
+          image: ghcr.io/devn913/simple_rag:latest 
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
