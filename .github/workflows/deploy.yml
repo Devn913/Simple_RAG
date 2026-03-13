@@ -41,7 +41,7 @@ jobs:
           images: ${{ steps.image_info.outputs.lowercase_image }}
           tags: |
             type=raw,value=latest
-            type=sha
+            type=raw,value=${{ github.sha }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -76,5 +76,6 @@ jobs:
       - name: Update deployment image
         run: |
           IMAGE_NAME_LC=$(echo "ghcr.io/${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          kubectl set image deployment/simple-rag-deployment simple-rag=$IMAGE_NAME_LC:latest
+          # Using commit SHA ensures a unique tag for every deployment, triggering a rollout
+          kubectl set image deployment/simple-rag-deployment simple-rag=$IMAGE_NAME_LC:${{ github.sha }}
           kubectl rollout status deployment/simple-rag-deployment
