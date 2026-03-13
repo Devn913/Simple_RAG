@@ -19,18 +19,18 @@ def list_gemini_models():
     """
     api_key = getattr(settings, 'GOOGLE_API_KEY', None)
     if not api_key:
-        logger.warning("No GOOGLE_API_KEY found in settings.")
+        print("DEBUG: No GOOGLE_API_KEY found in settings.")
         return []
     
     try:
         genai.configure(api_key=api_key)
         models = []
-        logger.info("Fetching available Gemini models...")
+        print("DEBUG: Fetching available Gemini models...")
         for m in genai.list_models():
-            # Log all models found for debugging
-            logger.info(f"Found model: {m.name} (Methods: {m.supported_generation_methods})")
+            # Print all models found for debugging
+            print(f"DEBUG: Found model: {m.name} (DisplayName: {m.display_name}, Methods: {m.supported_generation_methods})")
             
-            if 'generateContent' in m.supported_generation_methods and m.name.startswith('models/gemini'):
+            if 'generateContent' in m.supported_generation_methods:
                 display_name = m.display_name
                 model_name = m.name 
                 models.append({
@@ -38,10 +38,10 @@ def list_gemini_models():
                     'display_name': display_name
                 })
         
-        logger.info(f"Returning {len(models)} eligible models.")
+        print(f"DEBUG: Returning {len(models)} eligible models.")
         return models
     except Exception as e:
-        logger.error(f"Error listing Gemini models: {str(e)}")
+        print(f"DEBUG: Error listing Gemini models: {str(e)}")
         return []
 
 def process_pdf(file_path, vector_store_path):
