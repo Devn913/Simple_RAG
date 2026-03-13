@@ -9,30 +9,39 @@ from langchain_classic.chains import create_retrieval_chain
 from langchain_classic.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 def list_gemini_models():
     """
     Lists available Gemini models that support content generation.
     """
     api_key = getattr(settings, 'GOOGLE_API_KEY', None)
     if not api_key:
+        logger.warning("No GOOGLE_API_KEY found in settings.")
         return []
     
     try:
         genai.configure(api_key=api_key)
         models = []
+        logger.info("Fetching available Gemini models...")
         for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods:
-                # We want to show a clean name to the user
-                # e.g., models/gemini-1.5-flash -> Gemini 1.5 Flash
+            # Log all models found for debugging
+            logger.info(f"Found model: {m.name} (Methods: {m.supported_generation_methods})")
+            
+            if 'generateContent' in m.supported_generation_methods and m.name.startswith('models/gemini'):
                 display_name = m.display_name
-                model_name = m.name # e.g. models/gemini-1.5-flash
+                model_name = m.name 
                 models.append({
                     'name': model_name,
                     'display_name': display_name
                 })
+        
+        logger.info(f"Returning {len(models)} eligible models.")
         return models
     except Exception as e:
-        print(f"Error listing Gemini models: {str(e)}")
+        logger.error(f"Error listing Gemini models: {str(e)}")
         return []
 
 def process_pdf(file_path, vector_store_path):
