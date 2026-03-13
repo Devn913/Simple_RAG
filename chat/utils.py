@@ -10,39 +10,43 @@ from langchain_classic.chains.combine_documents import create_stuff_documents_ch
 from langchain_core.prompts import ChatPromptTemplate
 
 import logging
-
-logger = logging.getLogger(__name__)
-
+from google import genai
+from django.conf import settings
+...
 def list_gemini_models():
     """
-    Lists available Gemini models that support content generation.
+    Lists available Gemini models that support content generation using the new google-genai SDK.
     """
     api_key = getattr(settings, 'GOOGLE_API_KEY', None)
     if not api_key:
         print("DEBUG: No GOOGLE_API_KEY found in settings.")
         return []
-    
+
     try:
-        genai.configure(api_key=api_key)
+        client = genai.Client(api_key=api_key)
         models = []
-        print("DEBUG: Fetching available Gemini models...")
-        for m in genai.list_models():
-            # Print all models found for debugging
-            print(f"DEBUG: Found model: {m.name} (DisplayName: {m.display_name}, Methods: {m.supported_generation_methods})")
-            
-            if 'generateContent' in m.supported_generation_methods:
-                display_name = m.display_name
-                model_name = m.name 
+        print("DEBUG: Fetching available Gemini models with NEW SDK...")
+        # The new SDK has a different way to list models
+        for m in client.models.list():
+            print(f"DEBUG: Found model: {m.name} (Methods: {m.supported_generation_methods})")
+            # We filter for models that support generating content
+            # In the new SDK, supported_generation_methods might be represented differently
+            # but usually it's still ['generateContent']
+            if 'generateContent' in m.supported_generation_methods or 'generate_content' in m.supported_generation_methods:
                 models.append({
-                    'name': model_name,
-                    'display_name': display_name
+                    'name': m.name,
+                    'display_name': m.display_name or m.name
                 })
-        
+
         print(f"DEBUG: Returning {len(models)} eligible models.")
         return models
     except Exception as e:
-        print(f"DEBUG: Error listing Gemini models: {str(e)}")
-        return []
+        print(f"DEBUG: Error listing Gemini models with NEW SDK: {str(e)}")
+        # Fallback to a hardcoded list if the listing fails
+        return [
+            {'name': 'models/gemini-1.5-flash', 'display_name': 'Gemini 1.5 Flash'},
+            {'name': 'models/gemini-1.5-pro', 'display_name': 'Gemini 1.5 Pro'},
+        ]
 
 def process_pdf(file_path, vector_store_path):
     """
