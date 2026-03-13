@@ -124,6 +124,24 @@
         ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
         .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.3); }
         .sidebar::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.5); }
+
+        .delete-btn {
+            color: rgba(255,255,255,0.6);
+            transition: all 0.2s;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        .delete-btn:hover {
+            color: #ff4d4d;
+            background-color: rgba(255, 77, 77, 0.1);
+        }
+        .pdf-item.active .delete-btn {
+            color: rgba(0,0,0,0.3);
+        }
+        .pdf-item.active .delete-btn:hover {
+            color: #ff4d4d;
+            background-color: rgba(255, 77, 77, 0.05);
+        }
     </style>
 </head>
 <body>
@@ -154,8 +172,9 @@
                 <div id="pdf-list" class="flex-grow-1 overflow-auto pe-2">
                     {% for doc in documents %}
                         <div class="pdf-item {% if doc.status == 'FAILED' %}border-danger{% endif %}" data-id="{{ doc.id }}" data-status="{{ doc.status }}">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <strong class="text-truncate">{{ doc.title }}</strong>
+                            <div class="d-flex justify-content-between align-items-start">
+                                <strong class="text-truncate" style="max-width: 85%;">{{ doc.title }}</strong>
+                                <i class="fas fa-trash-alt delete-btn" onclick="deleteDocument(event, {{ doc.id }})" title="Delete document"></i>
                             </div>
                             <small class="text-light opacity-75 d-block mt-1"><i class="far fa-clock me-1"></i>{{ doc.uploaded_at|date:"M d, Y H:i" }}</small>
                             <div class="mt-1">
@@ -295,6 +314,58 @@
         document.getElementById('query-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') sendMessage();
         });
+
+        async function deleteDocument(event, docId) {
+            event.stopPropagation(); // Prevent selecting the document when clicking delete
+            
+            if (!confirm('Are you sure you want to delete this document and its chat history? This action cannot be undone.')) {
+                return;
+            }
+
+            const item = document.querySelector(`.pdf-item[data-id="${docId}"]`);
+            const originalOpacity = item.style.opacity;
+            item.style.opacity = '0.5';
+            item.style.pointerEvents = 'none';
+
+            try {
+                const response = await fetch(`/delete/${docId}/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    item.style.transform = 'translateX(-20px)';
+                    item.style.opacity = '0';
+                    setTimeout(() => {
+                        item.remove();
+                        if (selectedDocId == docId) {
+                            selectedDocId = null;
+                            document.getElementById('query-input').disabled = true;
+                            document.getElementById('send-btn').disabled = true;
+                            document.getElementById('current-doc-title').innerText = 'Select a document to begin';
+                            document.getElementById('chat-messages').innerHTML = `
+                                <div class="text-center mt-5 text-muted">
+                                    <i class="fas fa-comments fa-4x mb-3 opacity-25"></i>
+                                    <h5>Welcome to DocuChat!</h5>
+                                    <p>Select a processed document from the sidebar to ask questions about its content.</p>
+                                </div>`;
+                        }
+                    }, 300);
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to delete document'));
+                    item.style.opacity = originalOpacity;
+                    item.style.pointerEvents = 'auto';
+                }
+            } catch (error) {
+                alert('Connection error. Failed to delete document.');
+                item.style.opacity = originalOpacity;
+                item.style.pointerEvents = 'auto';
+            }
+        }
     </script>
 </body>
 </html>

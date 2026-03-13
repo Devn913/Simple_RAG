@@ -1,4 +1,5 @@
 import os
+import shutil
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from .forms import PDFUploadForm
@@ -66,6 +67,37 @@ def ask_question(request):
         except PDFDocument.DoesNotExist:
             return JsonResponse({'error': 'Document not found'}, status=404)
         except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+            
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+def delete_document(request, doc_id):
+    if request.method == 'POST':
+        try:
+            pdf_doc = get_object_or_404(PDFDocument, id=doc_id)
+            
+            # 1. Delete vector store folder if it exists
+            if pdf_doc.vector_store_path and os.path.exists(pdf_doc.vector_store_path):
+                try:
+                    shutil.rmtree(pdf_doc.vector_store_path)
+                    logger.info(f"Deleted vector store for document ID {doc_id}")
+                except Exception as e:
+                    logger.error(f"Error deleting vector store: {str(e)}")
+            
+            # 2. Delete the PDF file itself
+            if pdf_doc.file and os.path.exists(pdf_doc.file.path):
+                try:
+                    os.remove(pdf_doc.file.path)
+                    logger.info(f"Deleted PDF file for document ID {doc_id}")
+                except Exception as e:
+                    logger.error(f"Error deleting PDF file: {str(e)}")
+            
+            # 3. Delete from DB
+            pdf_doc.delete()
+            return JsonResponse({'success': True, 'message': 'Document and associated data deleted successfully'})
+            
+        except Exception as e:
+            logger.error(f"Error in delete_document view: {str(e)}")
             return JsonResponse({'error': str(e)}, status=500)
             
     return JsonResponse({'error': 'Invalid request method'}, status=405)
