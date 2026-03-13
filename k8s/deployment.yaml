@@ -25,7 +25,7 @@ spec:
             - name: DATA_DIR
               value: "/app/data"
             - name: DEBUG
-              value: "False"
+              value: "True"
             - name: ALLOWED_HOSTS
               value: "*" 
             - name: GOOGLE_API_KEY
